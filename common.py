@@ -29,13 +29,24 @@ class CheckedPopen(object):
         self.myrtncode = self.UNINIT
         self.continue_if_error = continue_if_error
         self.shell = shell
-        self.popen_obj = subprocess.Popen(args, shell=shell,
+        self.popen_obj = subprocess.Popen(self._sudo_filter(args), shell=shell,
                                           stdout=subprocess.PIPE,
                                           stderr=subprocess.PIPE,
                                           preexec_fn=os.setsid,
                                           close_fds=True,
                                           env=env)
 
+    def _sudo_filter(self, command):
+        logger.debug("filtering in cmd=%s" % command)
+        if isinstance(command, str):
+          if command.startswith('sudo'):
+            logger.debug("filtering sudo out in cmd=%s" % command)
+            return command[len('sudo '):]
+          return command
+        else:
+          if command[0] == 'sudo':
+            return command[1:]
+          return command
     def __str__(self):
        return 'checked_Popen args=%s continue_if_error=%s rtncode=%d'%(join_nostr(self.args), str(self.continue_if_error), self.myrtncode)
 
