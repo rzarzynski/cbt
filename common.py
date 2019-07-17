@@ -23,7 +23,7 @@ class CheckedPopen:
         self.args = args[:]
         self.myrtncode = self.UNINIT
         self.continue_if_error = continue_if_error
-        self.popen_obj = subprocess.Popen(args, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
+        self.popen_obj = subprocess.Popen(self._sudo_filter(args), shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
 
     def __str__(self):
        return 'checked_Popen args=%s continue_if_error=%s rtncode=%d'%(join_nostr(self.args), str(self.continue_if_error), self.myrtncode)
@@ -44,6 +44,18 @@ class CheckedPopen:
     def wait(self):
         self.communicate(continue_if_error=True)
         return self.myrtncode
+
+    def _sudo_filter(self, command):
+        logger.debug("filtering in cmd=%s" % command)
+        if isinstance(command, str):
+          if command.startswith('sudo'):
+            logger.debug("filtering sudo out in cmd=%s" % command)
+            return command[len('sudo '):]
+          return command
+        else:
+          if command[0] == 'sudo':
+            return command[1:]
+          return command
 
 
 # by default, do NOT abort if pdsh returns error status
