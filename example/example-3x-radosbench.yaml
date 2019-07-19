@@ -10,7 +10,7 @@ cluster:
   conf_file: /work/ceph-1/build/ceph.conf
   ceph.conf: /work/ceph-1/build/ceph.conf
   pid_dir: /work/ceph-1/build/out
-  iterations: 1
+  iterations: 3
   rebuild_every_test: False
   tmp_dir: "/tmp/cbt"
   ceph_cmd: /work/ceph-1/build/bin/ceph
