@@ -66,7 +66,11 @@ class Radosbench(Benchmark):
         stdout, _ = common.pdsh(settings.getnodes('head'), '%s -c %s -v' % (self.cmd_path, self.tmp_conf)).communicate()
         m = (re.findall("version (\d+)", stdout) or
              re.findall("version v(\d+)", stdout))
-        return int(m[0])
+        if m:
+            return int(m[0])
+        elif 'no_version' in stdout:
+            # ENABLE_GIT_VERSION is disabled, so return a random large number
+            return 255
 
     def run(self):
         super(Radosbench, self).run()
