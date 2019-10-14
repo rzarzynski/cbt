@@ -94,7 +94,7 @@ class Benchmark(object):
         nodes = settings.getnodes('clients', 'osds') 
 
         common.pdsh(nodes, 'sync').communicate()
-        common.pdsh(nodes, 'echo 3 | sudo tee /proc/sys/vm/drop_caches').communicate()
+        common.pdsh(nodes, 'echo 3 | tee /proc/sys/vm/drop_caches').communicate()
 
     def __str__(self):
         return str(self.config)

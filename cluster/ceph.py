@@ -45,16 +45,16 @@ class OsdThread(threading.Thread):
 
             # Setup the keyring directory
             data_dir = '%s/osd.%s' % (self.tmp_dir, self.osdnum)
-            common.pdsh(phost, 'sudo rm -rf %s' % data_dir).communicate()
+            common.pdsh(phost, 'rm -r %s' % data_dir).communicate()
             common.pdsh(phost, 'mkdir -p %s' % data_dir).communicate()
             key_fn = '%s/keyring' % data_dir
 
             # Setup crush and the keyring
-            common.pdsh(phost, 'sudo %s auth get-or-create osd.%s mon \'allow rwx\' osd \'allow *\' -o %s' % (self.cl_obj.ceph_cmd, self.osdnum, key_fn)).communicate()
+            common.pdsh(phost, '%s auth get-or-create osd.%s mon \'allow rwx\' osd \'allow *\' -o %s' % (self.cl_obj.ceph_cmd, self.osdnum, key_fn)).communicate()
 
-            common.pdsh(phost, 'sudo %s -c %s osd crush add osd.%d 1.0 host=%s rack=localrack root=default' % (self.cl_obj.ceph_cmd, ceph_conf, self.osdnum, self.host)).communicate()
+            common.pdsh(phost, '%s -c %s osd crush add osd.%d 1.0 host=%s rack=localrack root=default' % (self.cl_obj.ceph_cmd, ceph_conf, self.osdnum, self.host)).communicate()
             cmd='ulimit -n 16384 && ulimit -c unlimited && exec %s -c %s -i %d --mkfs --osd-uuid %s' % (self.cl_obj.ceph_osd_cmd, ceph_conf, self.osdnum, self.osduuid)
-            common.pdsh(phost, 'sudo sh -c "%s"' % cmd).communicate()
+            common.pdsh(phost, 'sh -c "%s"' % cmd).communicate()
 
             # Start the OSD
             pidfile="%s/ceph-osd.%d.pid" % (self.cl_obj.pid_dir, self.osdnum)
@@ -64,7 +64,7 @@ class OsdThread(threading.Thread):
             else:
                 cmd = '%s %s' % (self.cl_obj.ceph_run_cmd, cmd)
             stderr_file = "%s/osd.%d.stderr" % (self.cl_obj.tmp_dir, self.osdnum)
-            common.pdsh(phost, 'sudo sh -c "ulimit -n 16384 && ulimit -c unlimited && exec %s 2> %s"' % (cmd, stderr_file)).communicate()
+            common.pdsh(phost, 'sh -c "ulimit -n 16384 && ulimit -c unlimited && exec %s 2> %s"' % (cmd, stderr_file)).communicate()
         except Exception as e:
             self.exc = e
         finally:
@@ -207,7 +207,7 @@ class Ceph(Cluster):
 
         common.pdsh(nodes, 'sudo killall -9 massif-amd64-li').communicate()
         common.pdsh(nodes, 'sudo killall -9 memcheck-amd64-').communicate()
-        common.pdsh(nodes, 'sudo killall -9 ceph-osd').communicate()
+        common.pdsh(nodes, 'killall -9 ceph-osd').communicate()
         common.pdsh(nodes, 'sudo killall -9 ceph-mon').communicate()
         common.pdsh(nodes, 'sudo killall -9 ceph-mds').communicate()
         common.pdsh(nodes, 'sudo killall -9 ceph-mgr').communicate()
@@ -394,7 +394,7 @@ class Ceph(Cluster):
 #                osddir='/var/lib/ceph/osd/%s-%d'%(clusterid, osdnum)
                 osddir='%s/osd-device-%s-data' % (self.mnt_dir, devnumstr)
                 # create the OSD first, so we know what number it has been assigned.
-                common.pdsh(pdshhost, 'sudo %s -c %s osd create %s' % (self.ceph_cmd, self.tmp_conf, osduuid)).communicate()
+                common.pdsh(pdshhost, '%s -c %s osd create %s' % (self.ceph_cmd, self.tmp_conf, osduuid)).communicate()
                 # bring the OSD online in background while continuing to create OSDs in foreground
                 thrd = OsdThread(self, devnumstr, osdnum, clusterid, host, osduuid, osddir, self.tmp_dir)
                 logger.info('starting creation of OSD %d ' % osdnum)
@@ -575,13 +575,13 @@ class Ceph(Cluster):
             time.sleep(1)
 
     def dump_config(self, run_dir):
-        common.pdsh(settings.getnodes('osds'), 'sudo %s -c %s --admin-daemon /var/run/ceph/ceph-osd.0.asok config show > %s/ceph_settings.out' % (self.ceph_cmd, self.tmp_conf, run_dir)).communicate()
+        common.pdsh(settings.getnodes('osds'), '%s -c %s --admin-daemon /var/run/ceph/ceph-osd.0.asok config show > %s/ceph_settings.out' % (self.ceph_cmd, self.tmp_conf, run_dir)).communicate()
 
     def dump_historic_ops(self, run_dir):
-        common.pdsh(settings.getnodes('osds'), 'find "/var/run/ceph/ceph-osd*.asok" -maxdepth 1 -exec sudo %s --admin-daemon {} dump_historic_ops \; > %s/historic_ops.out' % (self.ceph_cmd, run_dir)).communicate()
+        common.pdsh(settings.getnodes('osds'), 'find "/var/run/ceph/ceph-osd*.asok" -maxdepth 1 -exec %s --admin-daemon {} dump_historic_ops \; > %s/historic_ops.out' % (self.ceph_cmd, run_dir)).communicate()
 
     def set_osd_param(self, param, value):
-        common.pdsh(settings.getnodes('osds'), 'find /dev/disk/by-partlabel/osd-device-*data -exec readlink {} \; | cut -d"/" -f 3 | sed "s/[0-9]$//" | xargs -I{} sudo sh -c "echo %s > /sys/block/\'{}\'/queue/%s"' % (value, param))
+        common.pdsh(settings.getnodes('osds'), 'find /dev/disk/by-partlabel/osd-device-*data -exec readlink {} \; | cut -d"/" -f 3 | sed "s/[0-9]$//" | xargs -I{} sh -c "echo %s > /sys/block/\'{}\'/queue/%s"' % (value, param))
 
 
     def __str__(self):
